@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Lista de Compras - Feira</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Cabeçalho -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-green-800 mb-2">🛒 Lista de Compras Inteligente</h1>
+            <p class="text-green-600 text-lg">Ajuste automático baseado nas suas necessidades mensais</p>
+        </div>
+
+        <!-- Configuração de Pessoas -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">👥 Configuração da Casa</h2>
+            <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <label class="text-gray-700 font-medium">Pessoas na casa:</label>
+                    <button onclick="adjustPeople(-1)" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold">-</button>
+                    <span id="peopleCount" class="bg-gray-100 px-4 py-2 rounded-lg font-semibold min-w-12 text-center">2</span>
+                    <button onclick="adjustPeople(1)" class="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full font-bold">+</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-gray-700 font-medium">Semanas do mês:</label>
+                    <button onclick="adjustWeeks(-1)" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold">-</button>
+                    <span id="weeksCount" class="bg-gray-100 px-4 py-2 rounded-lg font-semibold min-w-12 text-center">4</span>
+                    <button onclick="adjustWeeks(1)" class="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full font-bold">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adicionar Produto -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">➕ Adicionar Produto</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="text" id="productName" placeholder="Nome do produto" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <input type="number" id="baseQuantity" placeholder="Qtd por pessoa/semana" step="0.1" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <select id="unit" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="L">L</option>
+                    <option value="ml">ml</option>
+                    <option value="unid">unidades</option>
+                    <option value="pacote">pacotes</option>
+                    <option value="dúzia">dúzias</option>
+                </select>
+                <input type="number" id="pricePerUnit" placeholder="Preço por unidade (R$)" step="0.01" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <button onclick="addProduct()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">Adicionar</button>
+            </div>
+        </div>
+
+        <!-- Lista de Produtos -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">📋 Sua Lista de Compras</h2>
+                <button onclick="clearList()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Limpar Lista</button>
+            </div>
+            
+            <div id="productList" class="space-y-3">
+                <!-- Produtos serão adicionados aqui -->
+            </div>
+
+            <div id="emptyState" class="text-center py-12 text-gray-500">
+                <div class="text-6xl mb-4">🛍️</div>
+                <p class="text-lg">Sua lista está vazia. Adicione alguns produtos acima!</p>
+            </div>
+
+            <!-- Resumo -->
+            <div id="summary" class="mt-6 pt-6 border-t border-gray-200 hidden">
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-800 mb-2">📊 Resumo da Lista</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-green-700">Total de itens:</p>
+                            <p class="text-xl font-bold text-green-800"><span id="totalItems">0</span></p>
+                        </div>
+                        <div>
+                            <p class="text-green-700">Configuração:</p>
+                            <p class="text-lg font-semibold text-green-800"><span id="summaryPeople">2</span> pessoas × <span id="summaryWeeks">4</span> semanas</p>
+                        </div>
+                        <div>
+                            <p class="text-green-700">Valor estimado:</p>
+                            <p class="text-2xl font-bold text-blue-600">R$ <span id="totalCost">0.00</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let people = 2;
+        let weeks = 4;
+        let products = [];
+
+        // Produtos pré-definidos para exemplo
+        const defaultProducts = [
+            { name: 'Arroz', baseQuantity: 0.5, unit: 'kg', pricePerUnit: 6.50 },
+            { name: 'Feijão', baseQuantity: 0.25, unit: 'kg', pricePerUnit: 8.90 },
+            { name: 'Banana', baseQuantity: 1, unit: 'kg', pricePerUnit: 4.20 },
+            { name: 'Tomate', baseQuantity: 0.5, unit: 'kg', pricePerUnit: 7.80 },
+            { name: 'Leite', baseQuantity: 1, unit: 'L', pricePerUnit: 5.50 },
+            { name: 'Ovos', baseQuantity: 0.5, unit: 'dúzia', pricePerUnit: 12.00 }
+        ];
+
+        function adjustPeople(change) {
+            people = Math.max(1, people + change);
+            document.getElementById('peopleCount').textContent = people;
+            updateSummary();
+            renderProducts();
+        }
+
+        function adjustWeeks(change) {
+            weeks = Math.max(1, Math.min(8, weeks + change));
+            document.getElementById('weeksCount').textContent = weeks;
+            updateSummary();
+            renderProducts();
+        }
+
+        function addProduct() {
+            const name = document.getElementById('productName').value.trim();
+            const baseQuantity = parseFloat(document.getElementById('baseQuantity').value);
+            const unit = document.getElementById('unit').value;
+            const pricePerUnit = parseFloat(document.getElementById('pricePerUnit').value);
+
+            if (!name || !baseQuantity || baseQuantity <= 0) {
+                alert('Por favor, preencha o nome e quantidade corretamente!');
+                return;
+            }
+
+            const product = {
+                id: Date.now(),
+                name: name,
+                baseQuantity: baseQuantity,
+                unit: unit,
+                pricePerUnit: pricePerUnit || 0
+            };
+
+            products.push(product);
+            
+            // Limpar campos
+            document.getElementById('productName').value = '';
+            document.getElementById('baseQuantity').value = '';
+            document.getElementById('pricePerUnit').value = '';
+            
+            renderProducts();
+            updateSummary();
+        }
+
+        function removeProduct(id) {
+            products = products.filter(p => p.id !== id);
+            renderProducts();
+            updateSummary();
+        }
+
+        function calculateQuantity(baseQuantity) {
+            const total = baseQuantity * people * weeks;
+            return total % 1 === 0 ? total.toString() : total.toFixed(1);
+        }
+
+        function renderProducts() {
+            const productList = document.getElementById('productList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (products.length === 0) {
+                productList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            productList.innerHTML = products.map(product => {
+                const totalQuantity = calculateQuantity(product.baseQuantity);
+                const totalPrice = product.pricePerUnit ? (parseFloat(totalQuantity) * product.pricePerUnit).toFixed(2) : null;
+                const priceDisplay = product.pricePerUnit ? `R$ ${product.pricePerUnit.toFixed(2)}/${product.unit}` : 'Sem preço';
+                
+                return `
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 fade-in">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-800">${product.name}</h3>
+                            <p class="text-sm text-gray-600">
+                                ${product.baseQuantity} ${product.unit} por pessoa/semana
+                            </p>
+                            <p class="text-xs text-blue-600">${priceDisplay}</p>
+                        </div>
+                        <div class="text-right mr-4">
+                            <div class="text-lg font-bold text-green-600">${totalQuantity} ${product.unit}</div>
+                            <div class="text-xs text-gray-500">Total necessário</div>
+                            ${totalPrice ? `<div class="text-sm font-semibold text-blue-600 mt-1">R$ ${totalPrice}</div>` : ''}
+                        </div>
+                        <button onclick="removeProduct(${product.id})" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold transition-colors">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const totalItems = document.getElementById('totalItems');
+            const summaryPeople = document.getElementById('summaryPeople');
+            const summaryWeeks = document.getElementById('summaryWeeks');
+
+            if (products.length > 0) {
+                summary.classList.remove('hidden');
+                totalItems.textContent = products.length;
+                summaryPeople.textContent = people;
+                summaryWeeks.textContent = weeks;
+                
+                // Calcular valor total
+                const totalCost = products.reduce((sum, product) => {
+                    if (product.pricePerUnit) {
+                        const totalQuantity = parseFloat(calculateQuantity(product.baseQuantity));
+                        return sum + (totalQuantity * product.pricePerUnit);
+                    }
+                    return sum;
+                }, 0);
+                
+                const totalCostElement = document.getElementById('totalCost');
+                if (totalCostElement) {
+                    totalCostElement.textContent = totalCost.toFixed(2);
+                }
+            } else {
+                summary.classList.add('hidden');
+            }
+        }
+
+        function clearList() {
+            if (products.length === 0) return;
+            
+            if (confirm('Tem certeza que deseja limpar toda a lista?')) {
+                products = [];
+                renderProducts();
+                updateSummary();
+            }
+        }
+
+        // Inicializar com produtos de exemplo
+        function initializeWithDefaults() {
+            products = defaultProducts.map(product => ({
+                ...product,
+                id: Date.now() + Math.random()
+            }));
+            renderProducts();
+            updateSummary();
+        }
+
+        // Inicializar a aplicação
+        initializeWithDefaults();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9764c40b531ff62f',t:'MTc1NjM5NDE0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
